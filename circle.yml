@@ -1,6 +1,23 @@
+Skip to content
+This repository
+Search
+Pull requests
+Issues
+Gist
+ @draffelt
+ Watch 1
+  Star 0
+ Fork 6 BIDS-Apps/example
+ Code  Issues 1  Pull requests 1  Wiki  Pulse  Graphs
+Branch: master Find file Copy pathexample/circle.yml
+3a657cc  4 hours ago
+@chrisfilo chrisfilo missed one!
+1 contributor
+RawBlameHistory    44 lines (40 sloc)  2.41 KB
 general:
   artifacts:
-    - "~/outputs"
+    - "~/outputs1"
+    - "~/outputs2"
 machine:
   pre:
     - curl -sSL https://s3.amazonaws.com/circle-downloads/install-circleci-docker.sh | bash -s -- 1.10.0
@@ -14,21 +31,31 @@ dependencies:
 
   override:
     - if [[ ! -d ~/data/ds114_test1 ]]; then wget -c -P ${HOME}/downloads/ "https://googledrive.com/host/0B2JWN60ZLkgkMEw4bW5VUUpSdFU/ds114_test1.tar" && mkdir -p ${HOME}/data && tar xf ${HOME}/downloads/ds114_test1.tar -C ${HOME}/data; fi
+    - if [[ ! -d ~/data/ds114_test2 ]]; then wget -c -P ${HOME}/downloads/ "https://googledrive.com/host/0B2JWN60ZLkgkMEw4bW5VUUpSdFU/ds114_test2.tar" && mkdir -p ${HOME}/data && tar xf ${HOME}/downloads/ds114_test2.tar -C ${HOME}/data; fi
     - if [[ -e ~/docker/image.tar ]]; then docker load -i ~/docker/image.tar; fi
-    - docker build -t bids/${CIRCLE_PROJECT_REPONAME} . :
+    - docker build -t bids/${CIRCLE_PROJECT_REPONAME,,} . :
         timeout: 21600
-    - mkdir -p ~/docker; docker save "bids/${CIRCLE_PROJECT_REPONAME}" > ~/docker/image.tar
+    - mkdir -p ~/docker; docker save "bids/${CIRCLE_PROJECT_REPONAME,,}" > ~/docker/image.tar
     - mkdir -p ${HOME}/outputs
 
 test:
   override:
-    - docker run -i -v ${HOME}/data/ds114_test1:/bids_dataset -v ${HOME}/outputs:/outputs bids/${CIRCLE_PROJECT_REPONAME} /bids_dataset /outputs participant --participant_label 01 :
+    - docker run -ti -v ${HOME}/data/ds114_test1:/bids_dataset -v ${HOME}/outputs1:/outputs bids/${CIRCLE_PROJECT_REPONAME,,} /bids_dataset /outputs participant --participant_label 01 :
         timeout: 21600
-    - docker run -i -v ${HOME}/data/ds114_test1:/bids_dataset -v ${HOME}/outputs:/outputs bids/${CIRCLE_PROJECT_REPONAME} /bids_dataset /outputs participant --participant_label 02 :
+    - docker run -ti -v ${HOME}/data/ds114_test1:/bids_dataset -v ${HOME}/outputs1:/outputs bids/${CIRCLE_PROJECT_REPONAME,,} /bids_dataset /outputs participant --participant_label 02 :
         timeout: 21600
-
+#    - docker run -ti -v ${HOME}/data/ds114_test1:/bids_dataset -v ${HOME}/outputs1:/outputs bids/${CIRCLE_PROJECT_REPONAME,,} /bids_dataset /#outputs group :
+#        timeout: 21600
+#    - docker run -ti -v ${HOME}/data/ds114_test2:/bids_dataset -v ${HOME}/outputs2:/outputs bids/${CIRCLE_PROJECT_REPONAME,,} /bids_dataset /#outputs participant --participant_label 01 :
+#        timeout: 21600
+#    - docker run -ti -v ${HOME}/data/ds114_test2:/bids_dataset -v ${HOME}/outputs2:/outputs bids/${CIRCLE_PROJECT_REPONAME,,} /bids_dataset /#outputs participant --participant_label 02 :
+#        timeout: 21600
+#    - docker run -ti -v ${HOME}/data/ds114_test2:/bids_dataset -v ${HOME}/outputs2:/outputs bids/${CIRCLE_PROJECT_REPONAME,,} /bids_dataset /#outputs group :
+#        timeout: 21600
 #deployment:
 #  hub:
 #    branch: master
 #    commands:
 #      - if [[ -n "$DOCKER_PASS" ]]; then docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS && docker push $DOCKER_REPO; fi
+Contact GitHub API Training Shop Blog About
+© 2016 GitHub, Inc. Terms Privacy Security Status Help
