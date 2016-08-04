@@ -2,7 +2,7 @@
 FROM ubuntu:14.04
 MAINTAINER David Raffelt <draffelt@gmail.com>
 RUN apt-get update && apt-get install -y git g++ python libeigen3-dev zlib1g-dev wget
-RUN git clone https://github.com/MRtrix3/mrtrix3.git mrtrix3 && cd mrtrix3 && python configure -nogui -verbose && python build
+RUN wget -qO- http://github.com/MRtrix3/mrtrix3/archive/master.zip | bsdtar -xvf- && cd mrtrix3-master && python configure -nogui -verbose && python build
 RUN echo "TmpFileDir: /tmp" > /etc/mrtrix.conf
 
 RUN wget -O- http://neuro.debian.net/lists/trusty.us-ca.full | tee /etc/apt/sources.list.d/neurodebian.sources.list
