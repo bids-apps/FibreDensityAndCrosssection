@@ -1,0 +1,127 @@
+
+@article{andersson_integrated_2016,
+	title = {An integrated approach to correction for off-resonance effects and subject movement in diffusion {MR} imaging},
+	volume = {125},
+	issn = {1095-9572},
+	doi = {10.1016/j.neuroimage.2015.10.019},
+	abstract = {In this paper we describe a method for retrospective estimation and correction of eddy current (EC)-induced distortions and subject movement in diffusion imaging. In addition a susceptibility-induced field can be supplied and will be incorporated into the calculations in a way that accurately reflects that the two fields (susceptibility- and EC-induced) behave differently in the presence of subject movement. The method is based on registering the individual volumes to a model free prediction of what each volume should look like, thereby enabling its use on high b-value data where the contrast is vastly different in different volumes. In addition we show that the linear EC-model commonly used is insufficient for the data used in the present paper (high spatial and angular resolution data acquired with Stejskal-Tanner gradients on a 3T Siemens Verio, a 3T Siemens Connectome Skyra or a 7T Siemens Magnetome scanner) and that a higher order model performs significantly better. The method is already in extensive practical use and is used by four major projects (the WU-UMinn HCP, the MGH HCP, the UK Biobank and the Whitehall studies) to correct for distortions and subject movement.},
+	language = {eng},
+	journal = {NeuroImage},
+	author = {Andersson, Jesper L. R. and Sotiropoulos, Stamatios N.},
+	month = jan,
+	year = {2016},
+	pmid = {26481672},
+	pmcid = {PMC4692656},
+	keywords = {Diffusion, Eddy current, Movement, Registration, Susceptibility},
+	pages = {1063--1078}
+}
+
+@article{raffelt_apparent_2012,
+	title = {Apparent {Fibre} {Density}: a novel measure for the analysis of diffusion-weighted magnetic resonance images},
+	volume = {59},
+	issn = {1095-9572},
+	shorttitle = {Apparent {Fibre} {Density}},
+	doi = {10.1016/j.neuroimage.2011.10.045},
+	abstract = {This article proposes a new measure called Apparent Fibre Density (AFD) for the analysis of high angular resolution diffusion-weighted images using higher-order information provided by fibre orientation distributions (FODs) computed using spherical deconvolution. AFD has the potential to provide specific information regarding differences between populations by identifying not only the location, but also the orientations along which differences exist. In this work, analytical and numerical Monte-Carlo simulations are used to support the use of the FOD amplitude as a quantitative measure (i.e. AFD) for population and longitudinal analysis. To perform robust voxel-based analysis of AFD, we present and evaluate a novel method to modulate the FOD to account for changes in fibre bundle cross-sectional area that occur during spatial normalisation. We then describe a novel approach for statistical analysis of AFD that uses cluster-based inference of differences extended throughout space and orientation. Finally, we demonstrate the capability of the proposed method by performing voxel-based AFD comparisons between a group of Motor Neurone Disease patients and healthy control subjects. A significant decrease in AFD was detected along voxels and orientations corresponding to both the corticospinal tract and corpus callosal fibres that connect the primary motor cortices. In addition to corroborating previous findings in MND, this study demonstrates the clear advantage of using this type of analysis by identifying differences along single fibre bundles in regions containing multiple fibre populations.},
+	language = {eng},
+	number = {4},
+	journal = {NeuroImage},
+	author = {Raffelt, David and Tournier, J.-Donald and Rose, Stephen and Ridgway, Gerard R. and Henderson, Robert and Crozier, Stuart and Salvado, Olivier and Connelly, Alan},
+	month = feb,
+	year = {2012},
+	pmid = {22036682},
+	keywords = {Diffusion Magnetic Resonance Imaging, Female, Humans, Image Processing, Computer-Assisted, Male, Motor Neuron Disease},
+	pages = {3976--3994}
+}
+
+@article{raffelt_connectivity-based_2015,
+	title = {Connectivity-based fixel enhancement: {Whole}-brain statistical analysis of diffusion {MRI} measures in the presence of crossing fibres},
+	volume = {117},
+	issn = {1095-9572},
+	shorttitle = {Connectivity-based fixel enhancement},
+	doi = {10.1016/j.neuroimage.2015.05.039},
+	abstract = {In brain regions containing crossing fibre bundles, voxel-average diffusion MRI measures such as fractional anisotropy (FA) are difficult to interpret, and lack within-voxel single fibre population specificity. Recent work has focused on the development of more interpretable quantitative measures that can be associated with a specific fibre population within a voxel containing crossing fibres (herein we use fixel to refer to a specific fibre population within a single voxel). Unfortunately, traditional 3D methods for smoothing and cluster-based statistical inference cannot be used for voxel-based analysis of these measures, since the local neighbourhood for smoothing and cluster formation can be ambiguous when adjacent voxels may have different numbers of fixels, or ill-defined when they belong to different tracts. Here we introduce a novel statistical method to perform whole-brain fixel-based analysis called connectivity-based fixel enhancement (CFE). CFE uses probabilistic tractography to identify structurally connected fixels that are likely to share underlying anatomy and pathology. Probabilistic connectivity information is then used for tract-specific smoothing (prior to the statistical analysis) and enhancement of the statistical map (using a threshold-free cluster enhancement-like approach). To investigate the characteristics of the CFE method, we assessed sensitivity and specificity using a large number of combinations of CFE enhancement parameters and smoothing extents, using simulated pathology generated with a range of test-statistic signal-to-noise ratios in five different white matter regions (chosen to cover a broad range of fibre bundle features). The results suggest that CFE input parameters are relatively insensitive to the characteristics of the simulated pathology. We therefore recommend a single set of CFE parameters that should give near optimal results in future studies where the group effect is unknown. We then demonstrate the proposed method by comparing apparent fibre density between motor neurone disease (MND) patients with control subjects. The MND results illustrate the benefit of fixel-specific statistical inference in white matter regions that contain crossing fibres.},
+	language = {eng},
+	journal = {NeuroImage},
+	author = {Raffelt, David A. and Smith, Robert E. and Ridgway, Gerard R. and Tournier, J.-Donald and Vaughan, David N. and Rose, Stephen and Henderson, Robert and Connelly, Alan},
+	month = aug,
+	year = {2015},
+	pmid = {26004503},
+	pmcid = {PMC4528070},
+	keywords = {Analysis, Brain, Connectivity, Data Interpretation, Statistical, Diffusion, Diffusion Magnetic Resonance Imaging, Fixel, Humans, Image Enhancement, Imaging, Three-Dimensional, Motor Neuron Disease, MRI, Statistics, White Matter},
+	pages = {40--55}
+}
+
+@inproceedings{tournier_improved_2010,
+	address = {Stockholm, Sweden},
+	title = {Improved probabilistic streamlines tractography by 2nd order integration over fibre orientation distributions},
+	booktitle = {Proc. {Intl}. {Soc}. {Mag}. {Reson}. {Med}. 18},
+	author = {Tournier, Jacques-Donald and Calamante, Fernando and Connelly, Alan},
+	year = {2010}
+}
+
+@article{jeurissen_multi-tissue_2014,
+	title = {Multi-tissue constrained spherical deconvolution for improved analysis of multi-shell diffusion {MRI} data},
+	volume = {103},
+	issn = {1095-9572},
+	doi = {10.1016/j.neuroimage.2014.07.061},
+	abstract = {Constrained spherical deconvolution (CSD) has become one of the most widely used methods to extract white matter (WM) fibre orientation information from diffusion-weighted MRI (DW-MRI) data, overcoming the crossing fibre limitations inherent in the diffusion tensor model. It is routinely used to obtain high quality fibre orientation distribution function (fODF) estimates and fibre tractograms and is increasingly used to obtain apparent fibre density (AFD) measures. Unfortunately, CSD typically only supports data acquired on a single shell in q-space. With multi-shell data becoming more and more prevalent, there is a growing need for CSD to fully support such data. Furthermore, CSD can only provide high quality fODF estimates in voxels containing WM only. In voxels containing other tissue types such as grey matter (GM) and cerebrospinal fluid (CSF), the WM response function may no longer be appropriate and spherical deconvolution produces unreliable, noisy fODF estimates. The aim of this study is to incorporate support for multi-shell data into the CSD approach as well as to exploit the unique b-value dependencies of the different tissue types to estimate a multi-tissue ODF. The resulting approach is dubbed multi-shell, multi-tissue CSD (MSMT-CSD) and is compared to the state-of-the-art single-shell, single-tissue CSD (SSST-CSD) approach. Using both simulations and real data, we show that MSMT-CSD can produce reliable WM/GM/CSF volume fraction maps, directly from the DW data, whereas SSST-CSD has a tendency to overestimate the WM volume in voxels containing GM and/or CSF. In addition, compared to SSST-CSD, MSMT-CSD can substantially increase the precision of the fODF fibre orientations and reduce the presence of spurious fODF peaks in voxels containing GM and/or CSF. Both effects translate into more reliable AFD measures and tractography results with MSMT-CSD compared to SSST-CSD.},
+	language = {eng},
+	journal = {NeuroImage},
+	author = {Jeurissen, Ben and Tournier, Jacques-Donald and Dhollander, Thijs and Connelly, Alan and Sijbers, Jan},
+	month = dec,
+	year = {2014},
+	pmid = {25109526},
+	keywords = {Algorithms, Brain, Brain Mapping, Diffusion Magnetic Resonance Imaging, Diffusion MRI, Fibre orientation distribution functions, Humans, Image Processing, Computer-Assisted, Multiple tissue types, Multi-shell acquisition, Pattern Recognition, Automated, Spherical deconvolution, Tissue segmentation, White Matter},
+	pages = {411--426}
+}
+
+@article{raffelt_reorientation_2012,
+	title = {Reorientation of fiber orientation distributions using apodized point spread functions},
+	volume = {67},
+	issn = {1522-2594},
+	doi = {10.1002/mrm.23058},
+	abstract = {Using high angular resolution diffusion-weighted images, spherical deconvolution enables multiple white matter fiber populations to be resolved within a single voxel by computing the fiber orientation distribution (FOD). Higher order information provided by FODs could improve several methods for investigating population differences in white matter, including image registration, voxel-based analysis, atlas-based segmentation and labeling, and group average fiber tractography. All of these methods require spatial normalization of FODs. In this article, a novel method to reorient the FOD is presented, which is an important step required for FOD spatial normalization. The proposed method was assessed using both qualitative and quantitative experiments, with numerical simulations and in vivo human data. Results demonstrate that the proposed method improves FOD reorientation accuracy, removes undesired artefacts, and decreases computation time compared to a previous approach. The utility of the proposed method is illustrated by nonlinear FOD spatial normalization of 10 human subjects. Accurate reorientation and normalization of FODs is a critical step toward investigating white matter tissue in the context of multiple fiber orientations.},
+	language = {eng},
+	number = {3},
+	journal = {Magnetic Resonance in Medicine},
+	author = {Raffelt, David and Tournier, J.-Donald and Crozier, Stuart and Connelly, Alan and Salvado, Olivier},
+	month = mar,
+	year = {2012},
+	pmid = {22183751},
+	keywords = {Algorithms, Artifacts, Computer Simulation, Diffusion Magnetic Resonance Imaging, Humans, Image Enhancement, Image Processing, Computer-Assisted, Nerve Fibers, Myelinated},
+	pages = {844--855}
+}
+
+@article{raffelt_symmetric_2011,
+	title = {Symmetric diffeomorphic registration of fibre orientation distributions},
+	volume = {56},
+	issn = {1095-9572},
+	doi = {10.1016/j.neuroimage.2011.02.014},
+	abstract = {Registration of diffusion-weighted images is an important step in comparing white matter fibre bundles across subjects, or in the same subject at different time points. Using diffusion-weighted imaging, Spherical Deconvolution enables multiple fibre populations within a voxel to be resolved by computing the fibre orientation distribution (FOD). In this paper, we present a novel method that employs FODs for the registration of diffusion-weighted images. Registration was performed by optimising a symmetric diffeomorphic non-linear transformation model, using image metrics based on the mean squared difference, and cross-correlation of the FOD spherical harmonic coefficients. The proposed method was validated by recovering known displacement fields using FODs represented with maximum harmonic degrees (l(max)) of 2, 4 and 6. Results demonstrate a benefit in using FODs at l(max)=4 compared to l(max)=2. However, a decrease in registration accuracy was observed when l(max)=6 was used; this was likely caused by noise in higher harmonic degrees. We compared our proposed method to fractional anisotropy driven registration using an identical code base and parameters. FOD registration was observed to perform significantly better than FA in all experiments. The cross-correlation metric performed significantly better than the mean squared difference. Finally, we demonstrated the utility of this method by computing an unbiased group average FOD template that was used for probabilistic fibre tractography. This work suggests that using crossing fibre information aids in the alignment of white matter and could therefore benefit several methods for investigating population differences in white matter, including voxel based analysis, tensor based morphometry, atlas based segmentation and labelling, and group average fibre tractography.},
+	language = {eng},
+	number = {3},
+	journal = {NeuroImage},
+	author = {Raffelt, David and Tournier, J.-Donald and Fripp, Jurgen and Crozier, Stuart and Connelly, Alan and Salvado, Olivier},
+	month = jun,
+	year = {2011},
+	pmid = {21316463},
+	keywords = {Algorithms, Anisotropy, Brain, Data Interpretation, Statistical, Diffusion Magnetic Resonance Imaging, Humans, Image Processing, Computer-Assisted, Nerve Fibers, Nonlinear Dynamics, Pattern Recognition, Automated, Reproducibility of Results, Software, Water},
+	pages = {1171--1180}
+}
+
+@article{smith_effects_2015,
+	title = {The effects of {SIFT} on the reproducibility and biological accuracy of the structural connectome},
+	volume = {104},
+	issn = {1095-9572},
+	doi = {10.1016/j.neuroimage.2014.10.004},
+	abstract = {Diffusion MRI streamlines tractography is increasingly being used to characterise and assess the structural connectome of the human brain. However, issues pertaining to quantification of structural connectivity using streamlines reconstructions are well-established in the field, and therefore the validity of any conclusions that may be drawn from these analyses remains ambiguous. We recently proposed a post-processing method entitled "SIFT: Spherical-deconvolution Informed Filtering of Tractograms" as a mechanism for reducing the biases in quantitative measures of connectivity introduced by the streamlines reconstruction method. Here, we demonstrate the advantage of this approach in the context of connectomics in three steps. Firstly, we carefully consider the model imposed by the SIFT method, and the implications this has for connectivity quantification. Secondly, we investigate the effects of SIFT on the reproducibility of structural connectome construction. Thirdly, we compare quantitative measures extracted from structural connectomes derived from streamlines tractography, with and without the application of SIFT, to published estimates drawn from post-mortem brain dissection. The combination of these sources of evidence demonstrates the important role the SIFT methodology has for the robust quantification of structural connectivity of the brain using diffusion MRI.},
+	language = {eng},
+	journal = {NeuroImage},
+	author = {Smith, Robert E. and Tournier, Jacques-Donald and Calamante, Fernando and Connelly, Alan},
+	month = jan,
+	year = {2015},
+	pmid = {25312774},
+	keywords = {Adult, Algorithms, Brain, Connectome, Connectomics, Diffusion Magnetic Resonance Imaging, Diffusion MRI, Diffusion Tensor Imaging, Female, Fibre-tracking, Humans, Image Processing, Computer-Assisted, Male, Reproducibility of Results, Software, Structural connectome, Tractography},
+	pages = {253--265}
+}
