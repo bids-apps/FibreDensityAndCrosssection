@@ -1,19 +1,3 @@
-Skip to content
-This repository
-Search
-Pull requests
-Issues
-Gist
- @draffelt
- Watch 1
-  Star 0
- Fork 6 BIDS-Apps/example
- Code  Issues 1  Pull requests 1  Wiki  Pulse  Graphs
-Branch: master Find file Copy pathexample/circle.yml
-3a657cc  4 hours ago
-@chrisfilo chrisfilo missed one!
-1 contributor
-RawBlameHistory    44 lines (40 sloc)  2.41 KB
 general:
   artifacts:
     - "~/outputs1"
@@ -44,7 +28,7 @@ test:
         timeout: 21600
     - docker run -ti -v ${HOME}/data/ds114_test1:/bids_dataset -v ${HOME}/outputs1:/outputs bids/${CIRCLE_PROJECT_REPONAME,,} /bids_dataset /outputs participant --participant_label 02 :
         timeout: 21600
-#    - docker run -ti -v ${HOME}/data/ds114_test1:/bids_dataset -v ${HOME}/outputs1:/outputs bids/${CIRCLE_PROJECT_REPONAME,,} /bids_dataset /#outputs group :
+    - docker run -ti -v ${HOME}/data/ds114_test1:/bids_dataset -v ${HOME}/outputs1:/outputs bids/${CIRCLE_PROJECT_REPONAME,,} /bids_dataset /outputs #group :
 #        timeout: 21600
 #    - docker run -ti -v ${HOME}/data/ds114_test2:/bids_dataset -v ${HOME}/outputs2:/outputs bids/${CIRCLE_PROJECT_REPONAME,,} /bids_dataset /#outputs participant --participant_label 01 :
 #        timeout: 21600
@@ -57,5 +41,3 @@ test:
 #    branch: master
 #    commands:
 #      - if [[ -n "$DOCKER_PASS" ]]; then docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS && docker push $DOCKER_REPO; fi
-Contact GitHub API Training Shop Blog About
-© 2016 GitHub, Inc. Terms Privacy Security Status Help
