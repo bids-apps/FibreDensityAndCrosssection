@@ -14,7 +14,7 @@ For help and support please post a question on the [MRtrix3 discussion](http://c
 
 When using this pipeline, please include the following paragraph to descibe the method used. Citations can be found in the attached [bibtex](./fixel-based_analysis.bib) file.
 
-Fixel-based analysis was performed
+Pre-processing was performed as described in Raffelt et al. (2012), with the addition step of eddy-current correction using FSL (Andersson et al. 2016). FODs were computed using multi-shell multi-tissue Spherical Deconvolution (Jeurissen et al. 2014) using MRtrix (www.mrtrix.org). A population-specific FOD template was generated from a subset of data (12 patients and 12 controls) and all FOD images were registered to that template (Raffelt et al. 2011). Three quantiative measures were computed for each white matter fixel: Fibre Density (FD) (Raffelt et al. 2012), Fibre Cross-section (FC)(Raffelt et al. 2016) and also combined Fibre Density and Cross-section (FDC)(Raffelt et al. 2016). Statistical analysis was performed using connectivity-based fixel enhancement (CFE)(Raffelt et al. 2015). We assigned family-wise error corrected p-values to each fixel using permutation testing of the CFE enhanced t-statistics (5000 permutations).
 
 
 ### Instructions
