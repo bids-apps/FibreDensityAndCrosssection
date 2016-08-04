@@ -99,15 +99,19 @@ AUTHOR
      David Raffelt (david.raffelt@florey.edu.au)
 
 ```
+
+**To run the pipeline using docker**
+
 This fixel-based analysis pipeline has been broken up into several stages, each defined by the "analysis level" positional argument. Each level is labelled as either participant or group. Participant levels can be run on different subjects independently, while group level analysis is performed on all subjects within the group. The order in which the analysis should be run is participant1, group1, participant2, group2, participant3, group3, particpant4, group4.
 
 In order to share data between our container and the rest of our machine, we need to mount a volume. Docker does this with the `-v` flag. Docker expects its input formatted as: `-v path/to/local/data:/path/in/container`.
 
-To run the first particpant level analysis on a single subject use:
+For example, to run the first particpant level analysis on a single subject use:
 
 ```{bash}
 
 docker run -i --rm -v /path/to/local/data:/bids_input -v /path/to/local/output:/output bids/FixelAnalysis /bids_input /output participant1 --participant_label 01
 ```
 
+For example, to run the first particpant level analysis on a single subject use:
 
