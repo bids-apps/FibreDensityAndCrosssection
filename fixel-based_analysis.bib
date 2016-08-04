@@ -60,37 +60,22 @@
 	year = {2010}
 }
 
-@article{jeurissen_multi-tissue_2014,
-	title = {Multi-tissue constrained spherical deconvolution for improved analysis of multi-shell diffusion {MRI} data},
-	volume = {103},
-	issn = {1095-9572},
-	doi = {10.1016/j.neuroimage.2014.07.061},
-	abstract = {Constrained spherical deconvolution (CSD) has become one of the most widely used methods to extract white matter (WM) fibre orientation information from diffusion-weighted MRI (DW-MRI) data, overcoming the crossing fibre limitations inherent in the diffusion tensor model. It is routinely used to obtain high quality fibre orientation distribution function (fODF) estimates and fibre tractograms and is increasingly used to obtain apparent fibre density (AFD) measures. Unfortunately, CSD typically only supports data acquired on a single shell in q-space. With multi-shell data becoming more and more prevalent, there is a growing need for CSD to fully support such data. Furthermore, CSD can only provide high quality fODF estimates in voxels containing WM only. In voxels containing other tissue types such as grey matter (GM) and cerebrospinal fluid (CSF), the WM response function may no longer be appropriate and spherical deconvolution produces unreliable, noisy fODF estimates. The aim of this study is to incorporate support for multi-shell data into the CSD approach as well as to exploit the unique b-value dependencies of the different tissue types to estimate a multi-tissue ODF. The resulting approach is dubbed multi-shell, multi-tissue CSD (MSMT-CSD) and is compared to the state-of-the-art single-shell, single-tissue CSD (SSST-CSD) approach. Using both simulations and real data, we show that MSMT-CSD can produce reliable WM/GM/CSF volume fraction maps, directly from the DW data, whereas SSST-CSD has a tendency to overestimate the WM volume in voxels containing GM and/or CSF. In addition, compared to SSST-CSD, MSMT-CSD can substantially increase the precision of the fODF fibre orientations and reduce the presence of spurious fODF peaks in voxels containing GM and/or CSF. Both effects translate into more reliable AFD measures and tractography results with MSMT-CSD compared to SSST-CSD.},
+@article{tournier_robust_2007,
+	title = {Robust determination of the fibre orientation distribution in diffusion {MRI}: non-negativity constrained super-resolved spherical deconvolution},
+	volume = {35},
+	issn = {1053-8119},
+	shorttitle = {Robust determination of the fibre orientation distribution in diffusion {MRI}},
+	doi = {10.1016/j.neuroimage.2007.02.016},
+	abstract = {Diffusion-weighted (DW) MR images contain information about the orientation of brain white matter fibres that potentially can be used to study human brain connectivity in vivo using tractography techniques. Currently, the diffusion tensor model is widely used to extract fibre directions from DW-MRI data, but fails in regions containing multiple fibre orientations. The spherical deconvolution technique has recently been proposed to address this limitation. It provides an estimate of the fibre orientation distribution (FOD) by assuming the DW signal measured from any fibre bundle is adequately described by a single response function. However, the deconvolution is ill-conditioned and susceptible to noise contamination. This tends to introduce artefactual negative regions in the FOD, which are clearly physically impossible. In this study, the introduction of a constraint on such negative regions is proposed to improve the conditioning of the spherical deconvolution. This approach is shown to provide FOD estimates that are robust to noise whilst preserving angular resolution. The approach also permits the use of super-resolution, whereby more FOD parameters are estimated than were actually measured, improving the angular resolution of the results. The method provides much better defined fibre orientation estimates, and allows orientations to be resolved that are separated by smaller angles than previously possible. This should allow tractography algorithms to be designed that are able to track reliably through crossing fibre regions.},
 	language = {eng},
+	number = {4},
 	journal = {NeuroImage},
-	author = {Jeurissen, Ben and Tournier, Jacques-Donald and Dhollander, Thijs and Connelly, Alan and Sijbers, Jan},
-	month = dec,
-	year = {2014},
-	pmid = {25109526},
-	keywords = {Algorithms, Brain, Brain Mapping, Diffusion Magnetic Resonance Imaging, Diffusion MRI, Fibre orientation distribution functions, Humans, Image Processing, Computer-Assisted, Multiple tissue types, Multi-shell acquisition, Pattern Recognition, Automated, Spherical deconvolution, Tissue segmentation, White Matter},
-	pages = {411--426}
-}
-
-@article{raffelt_reorientation_2012,
-	title = {Reorientation of fiber orientation distributions using apodized point spread functions},
-	volume = {67},
-	issn = {1522-2594},
-	doi = {10.1002/mrm.23058},
-	abstract = {Using high angular resolution diffusion-weighted images, spherical deconvolution enables multiple white matter fiber populations to be resolved within a single voxel by computing the fiber orientation distribution (FOD). Higher order information provided by FODs could improve several methods for investigating population differences in white matter, including image registration, voxel-based analysis, atlas-based segmentation and labeling, and group average fiber tractography. All of these methods require spatial normalization of FODs. In this article, a novel method to reorient the FOD is presented, which is an important step required for FOD spatial normalization. The proposed method was assessed using both qualitative and quantitative experiments, with numerical simulations and in vivo human data. Results demonstrate that the proposed method improves FOD reorientation accuracy, removes undesired artefacts, and decreases computation time compared to a previous approach. The utility of the proposed method is illustrated by nonlinear FOD spatial normalization of 10 human subjects. Accurate reorientation and normalization of FODs is a critical step toward investigating white matter tissue in the context of multiple fiber orientations.},
-	language = {eng},
-	number = {3},
-	journal = {Magnetic Resonance in Medicine},
-	author = {Raffelt, David and Tournier, J.-Donald and Crozier, Stuart and Connelly, Alan and Salvado, Olivier},
-	month = mar,
-	year = {2012},
-	pmid = {22183751},
-	keywords = {Algorithms, Artifacts, Computer Simulation, Diffusion Magnetic Resonance Imaging, Humans, Image Enhancement, Image Processing, Computer-Assisted, Nerve Fibers, Myelinated},
-	pages = {844--855}
+	author = {Tournier, J.-Donald and Calamante, Fernando and Connelly, Alan},
+	month = may,
+	year = {2007},
+	pmid = {17379540},
+	keywords = {Algorithms, Brain, Computer Simulation, Data Interpretation, Statistical, Diffusion Magnetic Resonance Imaging, Humans, Image Processing, Computer-Assisted, Models, Statistical, Nerve Fibers, Reproducibility of Results},
+	pages = {1459--1472}
 }
 
 @article{raffelt_symmetric_2011,
