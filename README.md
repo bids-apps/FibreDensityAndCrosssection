@@ -4,15 +4,17 @@ The analysis pipeline relies primarily on the [MRtrix3](www.mrtrix.org) software
 
 ### Documentation
 
-Full documentation for MRtrix3 is available online [here](http://userdocs.mrtrix.org/). This pipeline performs pre-processing of diffusion MRI data according to the steps outlined [here](http://mrtrix.readthedocs.io/en/latest/workflows/DWI_preprocessing_for_quantitative_analysis.html). An overview of the steps performed in this fixel-based analysis are described [here](http://mrtrix.readthedocs.io/en/latest/workflows/fixel_based_analysis.html).
+Full documentation for MRtrix3 is available online [here](http://userdocs.mrtrix.org/). This pipeline performs pre-processing of diffusion MRI data according to the steps outlined [here](http://mrtrix.readthedocs.io/en/latest/workflows/DWI_preprocessing_for_quantitative_analysis.html), and fixel-based analysis using the steps listed [here](http://mrtrix.readthedocs.io/en/latest/workflows/fixel_based_analysis.html).
 
 ### Error Reporting
 
-For help and support please post a question on the MRtrix3 discussion forum found [here](http://community.mrtrix.org/).
+For help and support please post a question on the [MRtrix3 discussion](http://community.mrtrix.org/).
 
 ### Acknowledgement
 
 When using this pipeline, please include the following paragraph to descibe the method used. Citations can be found in the attached [bibtex](./fixel-based_analysis.bib) file.
+
+Fixel-based analysis was performed
 
 
 ### Instructions
@@ -20,9 +22,7 @@ When using this pipeline, please include the following paragraph to descibe the 
 This pipeline requires that data be organized in accordance with the [BIDS](http://bids.neuroimaging.io) spec.
 
 
-**To get your container ready to run just follow these steps:**
-
-- In your terminal, type:
+**To get your container ready to run type the following your terminal:**
 ```{bash}
 $ docker pull bids/FixelAnalysis
 ```
@@ -103,7 +103,7 @@ This fixel-based analysis pipeline has been broken up into several stages, each 
 
 In order to share data between our container and the rest of our machine, we need to mount a volume. Docker does this with the `-v` flag. Docker expects its input formatted as: `-v path/to/local/data:/path/in/container`.
 
-For example, to run the first particpant level analysis on a single subject use:
+To run the first particpant level analysis on a single subject use:
 
 ```{bash}
 
