@@ -21,4 +21,6 @@ RUN mkdir /bids_input
 RUN mkdir /output
 COPY run.py /code/run.py
 
+COPY version /version
+
 ENTRYPOINT ["/code/run.py"]
