@@ -1,3 +1,4 @@
+### Description
 This BIDS App enables group analysis of diffusion MRI data by performing a Fixel-Based Analysis (FBA) of Fibre Density, Fibre Cross-section and a combined measure (Fibre Density & Cross-section).
 
 The analysis pipeline relies primarily on the [MRtrix3](www.mrtrix.org) software package.
