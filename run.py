@@ -174,9 +174,6 @@ elif args.analysis_level == "participant4":
     warped_fod = os.path.join(args.output_dir, "warped_fod", "sub-" + subject_label + "_warped_fod.mif")
     cmd = "mrtransform %s -noreorientation %s -warp %s %s"%(nthreads, fod, subject2template_warp, warped_fod)
     subprocess.check_call(cmd, shell=True)
-    # TODO check new fod2fixel and how it handles combining multi subject data
-    #fixel_template =
-    #cmd = "fod2fixel %s %s %s %s"%(nthreads, warped_fod, , warped_fod)
 
 
 # running group level 3 (fixelcfestats)
