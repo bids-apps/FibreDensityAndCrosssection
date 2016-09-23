@@ -1,5 +1,5 @@
 # This is a comment
-FROM ubuntu:14.04
+FROM bids/base_validator
 MAINTAINER David Raffelt <draffelt@gmail.com>
 RUN apt-get update && apt-get install -y git g++ python libeigen3-dev zlib1g-dev wget bsdtar
 RUN wget -qO- http://github.com/MRtrix3/mrtrix3/archive/master.zip | bsdtar -xvf- && cd mrtrix3-master && python configure -nogui -verbose && NUMBER_OF_PROCESSORS=2 python build && find . -type d -exec chmod 755 {} + && find scripts -maxdepth 1 -type f -exec chmod 775 {} +
@@ -20,5 +20,7 @@ ENV PYTHONPATH=/mrtrix3-master/scripts:$PYTHONPATH
 RUN mkdir /bids_input
 RUN mkdir /output
 COPY run.py /code/run.py
+
+COPY version /version
 
 ENTRYPOINT ["/code/run.py"]
