@@ -6,6 +6,7 @@ from glob import glob
 import sys
 from lib.errorMessage  import errorMessage
 import lib.app, lib.cmdlineParser
+from lib.runCommand    import runCommand
 
 lib.app.author = 'David Raffelt (david.raffelt@florey.edu.au)'
 
@@ -58,43 +59,51 @@ else:
 # running participant level 1 (basic preprocessing)
 if lib.app.args.analysis_level == "participant1":
 
-  # TODO add detection of reverse phase encode b0s
   # dwipreproc
   for subject_label in subjects_to_analyze:
-    for dwi_file in glob(os.path.join(lib.app.args.bids_dir, "sub-%s"%subject_label,
-                     "dwi", "*_dwi.nii*")) + glob(os.path.join(lib.app.args.bids_dir,"sub-%s"%subject_label,"ses-*","dwi", "*dwi.nii*")):
+    label = 'sub-' + subject_label
+    all_dwi_images = glob(os.path.join(lib.app.args.bids_dir, label, "*dwi", "*_dwi.nii*"))
 
-      # Check for bvec and bvals
-      bvec = os.path.join(lib.app.args.bids_dir, "sub-%s"%subject_label, "dwi", os.path.splitext(os.path.basename(dwi_file))[0] + ".bvec")
-      bval = os.path.join(lib.app.args.bids_dir, "sub-%s"%subject_label, "dwi", os.path.splitext(os.path.basename(dwi_file))[0] + ".bval")
-      if not os.path.exists (bval):
-        bval = os.path.join(lib.app.args.bids_dir, "dwi.bval")
-        if not os.path.exists (bval):
-          errorMessage("No bval file found for subject %s"(subject_label));
-      if not os.path.exists (bvec):
-        bvec = os.path.join(lib.app.args.bids_dir, "dwi.bvec")
-        if not os.path.exists (bvec):
-          errorMessage("No bvec file found for subject %s"(subject_label));
+    # TODO handle multiple DWIs in subject folder
+    if (len(all_dwi_images) > 1):
+      errorMessage("Multiple DWIs found in subject folder. Multiple sessions not currently supported.")
 
-      if not os.path.exists(os.path.join(lib.app.args.output_dir, "dwi")):
-        os.mkdir(os.path.join(lib.app.args.output_dir, "dwi"))
-      preproc_file = os.path.join(lib.app.args.output_dir, "dwi", os.path.split(dwi_file)[-1].replace(".nii", "_preproc.mif"))
-      cmd = "dwipreproc %s -fslgrad %s %s -rpe_none AP %s %s"%(nthreads, bvec, bval, dwi_file, os.path.join(lib.app.args.output_dir, preproc_file))
-      print(cmd)
-      # TODO remove (for skipping EDDY step in testing)
-      #cmd = "mrconvert %s -fslgrad %s %s %s %s"%(nthreads, bvec, bval, dwi_file, preproc_file)
-      subprocess.check_call(cmd, shell=True)
-      if not os.path.exists(os.path.join(lib.app.args.output_dir, "mask")):
-        os.mkdir(os.path.join(lib.app.args.output_dir, "mask"))
-      mask_file = os.path.join(lib.app.args.output_dir, "mask", os.path.split(dwi_file)[-1].replace("dwi.nii", "mask.mif"))
-      print(cmd)
-      cmd = "dwi2mask %s %s %s"%(nthreads, preproc_file, mask_file)
-      subprocess.check_call(cmd, shell=True)
-      bias_file = preproc_file.replace(".mif", "_bias.mif")
-      cmd = "dwibiascorrect -ants -mask %s %s %s"%(mask_file, preproc_file, bias_file)
-      print (cmd)
-      subprocess.check_call(cmd, shell=True)
-      os.remove (preproc_file)
+    if not os.path.exists(os.path.join(lib.app.args.output_dir, "dwi")):
+      os.mkdir(os.path.join(lib.app.args.output_dir, "dwi"))
+
+    grad_prefix = os.path.join(lib.app.args.bids_dir, label, 'dwi', label + '_dwi')
+    if not (os.path.isfile(grad_prefix + '.bval') and os.path.isfile(grad_prefix + '.bvec')):
+      grad_prefix = os.path.join(lib.app.args.bids_dir, 'dwi')
+      if not (os.path.isfile(grad_prefix + '.bval') and os.path.isfile(grad_prefix + '.bvec')):
+        errorMessage('Unable to locate valid diffusion gradient table');
+    grad_import_option = ' -fslgrad ' + grad_prefix + '.bvec ' + grad_prefix + '.bval'
+    json_path = os.path.join(lib.app.args.bids_dir, label, 'dwi', label + '_dwi.json')
+    if os.path.isfile(json_path):
+      json_import_option = ' -json_import ' + json_path
+    else:
+      json_import_option = ''
+
+    # Stuff gradients in mif file
+    dwi_mrtrix_file = os.path.join(lib.app.args.output_dir, 'dwi', subject_label + '_input.mif')
+    runCommand('mrconvert ' + all_dwi_images[0] + grad_import_option + json_import_option + ' ' + dwi_mrtrix_file)
+
+    # Denoise
+    dwi_denoised_file = os.path.join(lib.app.args.output_dir, 'dwi', subject_label + '_denoised.mif')
+    runCommand('dwidenoise ' + dwi_mrtrix_file + ' ' + dwi_denoised_file)
+
+    # topup and eddy
+    dwi_preproc_file = os.path.join(lib.app.args.output_dir, 'dwi', subject_label + '_preproc.mif')
+    #runCommand("dwipreproc %s -rpe_none AP %s %s"%(nthreads, 'dwi_denoised.mif', dwi_preproc_file))
+
+    # Compute brain mask
+    if not os.path.exists(os.path.join(lib.app.args.output_dir, "mask")):
+      os.mkdir(os.path.join(lib.app.args.output_dir, "mask"))
+    mask_file = os.path.join(lib.app.args.output_dir, "mask", subject_label + '_mask.mif')
+    #runCommand("dwi2mask -nthreads %s %s %s"%(nthreads, preproc_file, mask_file))
+
+    # Perform bias field correction
+    bias_file = os.path.join(lib.app.args.output_dir, 'dwi', subject_label + '_preproc_bias.mif')
+    #runCommand("dwibiascorrect -ants -mask %s %s %s"%(mask_file, preproc_file, bias_file))
 
 # running group level 1 (intensity normalisation)
 elif lib.app.args.analysis_level == "group1":
