@@ -38,7 +38,7 @@ options.add_argument('--participant_label', help='The label(s) of the participan
 options.add_argument('--n_cpus', type=int, default='1', help='The number of CPU cores available on the compute node. '
                                                              'Set to 0 to use the maximum number of cores available')
 
-subprocess.check_call("bids-validator %s"%args.bids_dir, shell=True)
+runCommand('bids-validator ' + lib.app.args.bids_dir)
 
 lib.app.initialise()
 
