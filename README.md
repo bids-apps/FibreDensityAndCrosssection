@@ -25,13 +25,13 @@ This pipeline requires that data be organized in accordance with the [BIDS](http
 
 **To get your container ready to run type the following your terminal:**
 ```{bash}
-$ docker pull bids/FixelAnalysis
+$ docker pull bids/fibredensityandcrosssection
 ```
 
 **Before starting, let's check out the help page**
 
-```{bash}
-$ docker run -ti bids/FixelAnalysis -h
+```
+$ docker run -ti bids/fibredensityandcrosssection -h
 
 SYNOPSIS
 
@@ -111,8 +111,7 @@ For example, to run the first particpant level analysis on a single subject use:
 
 ```{bash}
 
-docker run -i --rm -v /path/to/local/data:/bids_input -v /path/to/local/output:/output bids/FixelAnalysis /bids_input /output participant1 --participant_label 01
+docker run -i --rm -v /path/to/local/data:/bids_input -v /path/to/local/output:/output bids/fibredensityandcrosssection /bids_input /output participant1 --participant_label 01
 ```
 
 For example, to run the first particpant level analysis on a single subject use:
-
