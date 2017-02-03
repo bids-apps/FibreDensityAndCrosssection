@@ -1,4 +1,3 @@
-# This is a comment
 FROM bids/base_validator
 MAINTAINER David Raffelt <draffelt@gmail.com>
 RUN apt-get update && apt-get install -y git python libeigen3-dev zlib1g-dev wget bsdtar software-properties-common
@@ -12,7 +11,7 @@ RUN apt-key adv --recv-keys --keyserver hkp://pgp.mit.edu:80 0xA5D32F012649A5A9 
 ENV CXX=/usr/bin/g++-5
 
 RUN git clone https://github.com/MRtrix3/mrtrix3.git mrtrix3 && cd mrtrix3 && git checkout tag_0.3.16 && python configure -nogui
-RUN if [ "$CIRCLECI" = "true" ]; then cd mrtrix3 && NUMBER_OF_PROCESSORS=2 python build; else cd mrtrix3 && python build; fi
+RUN if [ "$CIRCLECI" = "true" ]; then cd mrtrix3 && NUMBER_OF_PROCESSORS=1 python build; else cd mrtrix3 && python build; fi
 
 ENV FSLDIR=/usr/share/fsl/5.0
 ENV FSLOUTPUTTYPE=NIFTI_GZ
