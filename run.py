@@ -5,8 +5,15 @@ import subprocess
 from glob import glob
 import sys
 from lib.errorMessage  import errorMessage
+from lib.printMessage  import printMessage
 import lib.app, lib.cmdlineParser
 from lib.runCommand    import runCommand
+from lib.isWindows     import isWindows
+from lib.getHeaderInfo import getHeaderInfo
+from lib.delFile       import delFolder
+
+__version__ = 'BIDS-App \'FibreDensityAndCrosssection\' version {}'.format(open('/version').read()) if os.path.exists('/version') else 'BIDS-App \'FibreDensityAndCrosssection\' standalone'
+
 
 lib.app.author = 'David Raffelt (david.raffelt@florey.edu.au)'
 
@@ -28,24 +35,30 @@ lib.app.parser.add_argument('analysis_level', help='Level of the analysis that w
 
 
 options = lib.app.parser.add_argument_group('Options for the population_template script')
-
-
 options.add_argument('--participant_label', help='The label(s) of the participant(s) that should be analyzed. The label '
-                                           'corresponds to sub-<participant_label> from the BIDS spec '
-                                           '(so it does not include "sub-"). If this parameter is not '
-                                           'provided all subjects should be analyzed. Multiple '
-                                           'participants can be specified with a space separated list.',
-                                            nargs=1)
-options.add_argument('--n_cpus', type=int, default='1', help='The number of CPU cores available on the compute node. '
+                                                 'corresponds to sub-<participant_label> from the BIDS spec '
+                                                 '(so it does not include "sub-"). If this parameter is not '
+                                                 'provided all subjects should be analyzed. Multiple '
+                                                 'participants can be specified with a space separated list.',
+                                                  nargs=1)
+options.add_argument('--n_cpus', type=int, default='+', help='The number of CPU cores available on the compute node. '
                                                              'Set to 0 to use the maximum number of cores available')
+options.add_argument('-vox_size', type=float, default='1.25', help='define the voxel size (in mm) to be used during the upsampling step')
+options.add_argument('-num_tracks', type=int, default='20000000', help='define the number of streamlines to be computed '
+                                                                        'when performing tractography on the FOD template')
+options.add_argument('-num_tracks_sift', type=int, default='2000000', help='define the number of streamlines to '
+                                                                           'remain after performing SIFT on the tractogram')
+
+
 
 lib.app.initialise()
 
-subprocess.check_call('bids-validator ' + lib.app.args.bids_dir, shell=True)
+if isWindows():
+  errorMessage('Script cannot be run on Windows due to FSL dependency')
 
-nthreads = ""
+nthreads = ''
 if (lib.app.args.n_cpus):
-  nthreads = "-nthreads " + str(lib.app.args.n_cpus)
+  lib.app.mrtrixNThreads = '-nthreads ' + str(lib.app.args.n_cpus) + ' '
 
 subjects_to_analyze = []
 # only for a subset of subjects
@@ -53,138 +66,295 @@ if lib.app.args.participant_label:
   subjects_to_analyze = lib.app.args.participant_label
 # for all subjects
 else:
-  subject_dirs = glob(os.path.join(lib.app.args.bids_dir, "sub-*"))
+  subject_dirs = glob(os.path.join(lib.app.args.bids_dir, 'sub-*'))
   subjects_to_analyze = [subject_dir.split("-")[-1] for subject_dir in subject_dirs]
 
-# running participant level 1 (basic preprocessing)
-if lib.app.args.analysis_level == "participant1":
+# create output subjects directory
+all_subjects_dir = os.path.join(lib.app.args.output_dir, 'subjects');
+if not os.path.exists(all_subjects_dir):
+  os.mkdir(all_subjects_dir)
 
-  # dwipreproc
+# create the output template directory
+template_dir = os.path.join(lib.app.args.output_dir, 'template')
+if not os.path.exists(template_dir):
+  os.mkdir(template_dir)
+
+# create a temporary directory for intermediate files
+lib.app.makeTempDir()
+
+# running participant level 1 (basic preprocessing)
+if lib.app.args.analysis_level == 'participant1':
+
+  subprocess.check_call('bids-validator ' + lib.app.args.bids_dir, shell=True)
+
   for subject_label in subjects_to_analyze:
     label = 'sub-' + subject_label
-    all_dwi_images = glob(os.path.join(lib.app.args.bids_dir, label, "*dwi", "*_dwi.nii*"))
+    printMessage('running basic pre-processing for ' + label)
 
-    # TODO handle multiple DWIs in subject folder
+    # Read DWI(s) in BIDS folder
+    all_dwi_images = glob(os.path.join(lib.app.args.bids_dir, label, '*dwi', '*_dwi.nii*'))
+
+    # TODO handle multiple DWIs (e.g. time points) in subject directory
     if (len(all_dwi_images) > 1):
-      errorMessage("Multiple DWIs found in subject folder. Multiple sessions not currently supported.")
+      errorMessage('Multiple DWIs found in subject folder. Multiple sessions not currently supported.')
 
-    if not os.path.exists(os.path.join(lib.app.args.output_dir, "dwi")):
-      os.mkdir(os.path.join(lib.app.args.output_dir, "dwi"))
+    # Create output subject directory
+    subject_dir = os.path.join(all_subjects_dir, subject_label)
+    if not os.path.exists(subject_dir):
+      os.mkdir(subject_dir)
 
+    # Check existence output files from this analysis level
+    dwi_preproc_file = os.path.join(subject_dir, 'dwi_preproc.mif')
+    lib.app.checkOutputFile(dwi_preproc_file)
+    wm_response_file = os.path.join(subject_dir, 'wm_response.txt')
+    lib.app.checkOutputFile(wm_response_file)
+    gm_response_file = os.path.join(subject_dir, 'gm_response.txt')
+    lib.app.checkOutputFile(gm_response_file)
+    csf_response_file = os.path.join(subject_dir, 'csf_response.txt')
+    lib.app.checkOutputFile(csf_response_file)
+
+    # DW gradient files
     grad_prefix = os.path.join(lib.app.args.bids_dir, label, 'dwi', label + '_dwi')
     if not (os.path.isfile(grad_prefix + '.bval') and os.path.isfile(grad_prefix + '.bvec')):
       grad_prefix = os.path.join(lib.app.args.bids_dir, 'dwi')
       if not (os.path.isfile(grad_prefix + '.bval') and os.path.isfile(grad_prefix + '.bvec')):
         errorMessage('Unable to locate valid diffusion gradient table');
     grad_import_option = ' -fslgrad ' + grad_prefix + '.bvec ' + grad_prefix + '.bval'
+
+    # Json file
     json_path = os.path.join(lib.app.args.bids_dir, label, 'dwi', label + '_dwi.json')
     if os.path.isfile(json_path):
       json_import_option = ' -json_import ' + json_path
     else:
       json_import_option = ''
 
-    # Stuff gradients in mif file
-    dwi_mrtrix_file = os.path.join(lib.app.args.output_dir, 'dwi', subject_label + '_input.mif')
+
+    # Stuff DWI gradients in *.mif file
+    dwi_mrtrix_file = os.path.join(lib.app.tempDir, subject_label + 'dwi.mif')
     runCommand('mrconvert ' + all_dwi_images[0] + grad_import_option + json_import_option + ' ' + dwi_mrtrix_file)
 
     # Denoise
-    dwi_denoised_file = os.path.join(lib.app.args.output_dir, 'dwi', subject_label + '_denoised.mif')
+    dwi_denoised_file = os.path.join(lib.app.tempDir, subject_label + 'dwi_denoised.mif')
     runCommand('dwidenoise ' + dwi_mrtrix_file + ' ' + dwi_denoised_file)
 
-    # topup and eddy
-    dwi_preproc_file = os.path.join(lib.app.args.output_dir, 'dwi', subject_label + '_preproc.mif')
-    #runCommand("dwipreproc %s -rpe_none AP %s %s"%(nthreads, 'dwi_denoised.mif', dwi_preproc_file))
+    # Topup and eddy TODO add reverse phase encode capability
+    runCommand('dwipreproc -rpe_none -pe_dir AP ' + lib.app.mrtrixNThreads + dwi_denoised_file + ' ' + dwi_preproc_file + lib.app.mrtrixForce)
 
-    # Compute brain mask
-    if not os.path.exists(os.path.join(lib.app.args.output_dir, "mask")):
-      os.mkdir(os.path.join(lib.app.args.output_dir, "mask"))
-    mask_file = os.path.join(lib.app.args.output_dir, "mask", subject_label + '_mask.mif')
-    #runCommand("dwi2mask -nthreads %s %s %s"%(nthreads, preproc_file, mask_file))
+    # Estimate WM, GM, CSF response functions
+    runCommand('dwi2response ' + lib.app.mrtrixNThreads + ' dhollander ' + dwi_preproc_file + ' ' + wm_response_file + ' '
+                                                                                                  + gm_response_file + ' '
+                                                                                                  + csf_response_file + lib.app.mrtrixForce)
 
-    # Perform bias field correction
-    bias_file = os.path.join(lib.app.args.output_dir, 'dwi', subject_label + '_preproc_bias.mif')
-    #runCommand("dwibiascorrect -ants -mask %s %s %s"%(mask_file, preproc_file, bias_file))
-
-# running group level 1 (intensity normalisation)
+# running group level 1 (average response functions) TODO check for user supplied subset to ensure response is not biased
 elif lib.app.args.analysis_level == "group1":
-  mask_dir = os.path.join(lib.app.args.output_dir, "mask")
-  dwi_dir = os.path.join(lib.app.args.output_dir, "dwi")
-  norm_dwi_dir = os.path.join(lib.app.args.output_dir, "norm_dwi")
-  fa_template = os.path.join(lib.app.args.output_dir, "fa_template.mif")
-  wm_mask = os.path.join(lib.app.args.output_dir, "wm_mask.mif")
-  cmd = "dwiintensitynorm %s %s %s %s %s %s"%(nthreads, dwi_dir, mask_dir, norm_dwi_dir, fa_template, wm_mask)
-  print (cmd)
-  subprocess.check_call(cmd, shell=True)
-  response_dir = os.path.join(lib.app.args.output_dir, "response")
-  if not os.path.exists(response_dir):
-    os.mkdir(response_dir)
+  printMessage('averaging response functions')
+  wm_response_file = os.path.join(lib.app.args.output_dir, 'average_wm_response.txt')
+  lib.app.checkOutputFile(wm_response_file)
+  gm_response_file = os.path.join(lib.app.args.output_dir, 'average_gm_response.txt')
+  lib.app.checkOutputFile(gm_response_file)
+  csf_response_file = os.path.join(lib.app.args.output_dir, 'average_csf_response.txt')
+  lib.app.checkOutputFile(csf_response_file)
+  input_wm_files = glob(os.path.join(all_subjects_dir, '*', 'wm_response.txt'))
+  runCommand('average_response ' + ' '.join(input_wm_files) + ' ' + wm_response_file + lib.app.mrtrixForce)
+  input_gm_files = glob(os.path.join(all_subjects_dir, '*', 'gm_response.txt'))
+  runCommand('average_response ' + ' '.join(input_gm_files) + ' ' + gm_response_file + lib.app.mrtrixForce)
+  input_csf_files = glob(os.path.join(all_subjects_dir, '*', 'csf_response.txt'))
+  runCommand('average_response ' + ' '.join(input_csf_files) + ' ' + csf_response_file + lib.app.mrtrixForce)
 
-# running participant level 2 (dwi2response)
+
+# running participant level 2 (upsample, compute brain masks and FODs, perform intensity normalisation and bias field correction)
 elif lib.app.args.analysis_level == "participant2":
   for subject_label in subjects_to_analyze:
-    input_dwi = os.path.join(lib.app.args.output_dir, "norm_dwi", "sub-" + subject_label + "_dwi.mif")
-    output_response = os.path.join(lib.app.args.output_dir, "response", subject_label + "-response.txt")
-    cmd = "dwi2response %s tournier %s %s"%(nthreads, input_dwi, output_response)
-    print (cmd)
-    subprocess.check_call(cmd, shell=True)
 
-# running group level 2 (average response)
-elif lib.app.args.analysis_level == "group2":
-  cmd = "average_response %s/* %s"%(os.path.join(lib.app.args.output_dir, "response"), os.path.join(lib.app.args.output_dir, "average_response.txt"))
-  subprocess.check_call(cmd, shell=True)
+    subject_dir = os.path.join(all_subjects_dir, subject_label)
+    output_mask = os.path.join(subject_dir, 'mask.mif')
+    lib.app.checkOutputFile(output_mask)
+    output_fod = os.path.join(subject_dir, 'fod.mif')
+    lib.app.checkOutputFile(output_fod)
+    output_gm = os.path.join(subject_dir, 'gm.mif')
+    lib.app.checkOutputFile(output_gm)
+    output_csf = os.path.join(subject_dir, 'csf.mif')
+    lib.app.checkOutputFile(output_csf)
 
-# running participant level 3 (upsample, brain mask, CSD)
+    min_voxel_size = 1.25;
+    if lib.app.args.vox_size:
+      min_voxel_size = float(lib.app.args.vox_size)
+
+    voxel_sizes = getHeaderInfo(os.path.join(subject_dir, 'dwi_preproc.mif'), 'vox').split()
+    mean_voxel_size = 0.0
+    for i in range(0,3):
+      mean_voxel_size = mean_voxel_size + float(voxel_sizes[i]) / 3.0
+
+    input_to_csd = os.path.join(subject_dir, 'dwi_preproc.mif')
+
+    # Up sample
+    if mean_voxel_size > min_voxel_size:
+      runCommand('mrresize -vox ' + str(min_voxel_size) + ' ' + input_to_csd + ' ' + os.path.join(lib.app.tempDir, subject_label + 'dwi_upsampled.mif'))
+      input_to_csd = os.path.join(lib.app.tempDir, subject_label + 'dwi_upsampled.mif')
+
+    # Compute brain mask
+    runCommand('dwi2mask ' + input_to_csd + ' ' + output_mask + lib.app.mrtrixForce)
+
+    # Perform CSD
+    runCommand('dwi2fod msmt_csd ' + input_to_csd + ' -mask ' + output_mask + ' ' +
+                os.path.join(lib.app.args.output_dir, 'average_wm_response.txt') + ' ' +  os.path.join(lib.app.tempDir, subject_label + 'fod.mif') + ' ' +
+                os.path.join(lib.app.args.output_dir, 'average_gm_response.txt') + ' ' + os.path.join(lib.app.tempDir, subject_label + 'gm.mif') + ' ' +
+                os.path.join(lib.app.args.output_dir, 'average_csf_response.txt') + ' ' + os.path.join(lib.app.tempDir, subject_label + 'csf.mif'))
+
+    runCommand('mtbin -independent ' + os.path.join(lib.app.tempDir, subject_label + 'fod.mif') + ' ' + output_fod + ' ' +
+                                       os.path.join(lib.app.tempDir, subject_label + 'gm.mif')  + ' ' + output_gm  + ' ' +
+                                       os.path.join(lib.app.tempDir, subject_label + 'csf.mif') + ' ' + output_csf + lib.app.mrtrixForce)
+
+
+# running group level 2 (generate FOD template)
+elif lib.app.args.analysis_level == 'group2':
+
+  # TODO if user supplies a subset, then only output the template
+
+  # Check if outputs exist
+  fod_template = os.path.join(template_dir, 'fod_template.mif')
+  lib.app.checkOutputFile(fod_template)
+
+  lib.app.gotoTempDir()
+  os.mkdir('fod_input')
+  os.mkdir('mask_input')
+
+  # make symlinks to all population_template inputs in single directory
+  for subj in glob(os.path.join(all_subjects_dir, '*')):
+    os.symlink(os.path.join(subj, 'fod.mif'), os.path.join('fod_input', os.path.basename(subj) + '.mif'))
+    os.symlink(os.path.join(subj, 'mask.mif'), os.path.join('mask_input', os.path.basename(subj) + '.mif'))
+
+  # Compute FOD template
+  runCommand('population_template fod_input -mask mask_input ' + fod_template + lib.app.mrtrixForce)
+
+
+# running participant level 3 (register FODs, and warp masks)
 elif lib.app.args.analysis_level == "participant3":
-  for subject_label in subjects_to_analyze:
-    input_dwi = os.path.join(lib.app.args.output_dir, "norm_dwi", "sub-" + subject_label + "_dwi.mif")
-    if not os.path.exists(os.path.join(lib.app.args.output_dir, "upsampled_dwi")):
-      os.mkdir(os.path.join(lib.app.args.output_dir, "upsampled_dwi"))
-    upsampled_dwi = os.path.join(lib.app.args.output_dir, "upsampled_dwi", "sub-" + subject_label + "_dwi.mif")
-    #TODO, detect if resolution > 2mm
-    cmd = "mrresize %s -scale 2.0 %s %s"%(nthreads, input_dwi, upsampled_dwi)
-    subprocess.check_call(cmd, shell=True)
-    if not os.path.exists(os.path.join(lib.app.args.output_dir, "upsampled_mask")):
-      os.mkdir(os.path.join(lib.app.args.output_dir, "upsampled_mask"))
-    input_mask = os.path.join(lib.app.args.output_dir, "mask", "sub-" + subject_label + "_mask.mif")
-    upsampled_mask = os.path.join(lib.app.args.output_dir, "upsampled_mask", "sub-" + subject_label + "_mask.mif")
-    cmd = "mrresize %s -scale 2.0 -interp nearest %s %s"%(nthreads, input_mask, upsampled_mask)
-    subprocess.check_call(cmd, shell=True)
-    if not os.path.exists(os.path.join(lib.app.args.output_dir, "fod")):
-      os.mkdir(os.path.join(lib.app.args.output_dir, "fod"))
-    fod = os.path.join(lib.app.args.output_dir, "fod", "sub-" + subject_label + "_fod.mif")
-    group_response = os.path.join(lib.app.args.output_dir, "response", subject_label + "-response.txt")
-    cmd = "dwiextract %s %s - | dwi2fod %s msmt_csd - %s %s -mask %s"%(nthreads, upsampled_dwi, nthreads, group_response, fod, upsampled_mask)
-    subprocess.check_call(cmd, shell=True)
 
-# running group level 3 (generate study specific FOD template, compute fixel template mask, compute voxel mask, tractography, SIFT)
+  for subject_label in subjects_to_analyze:
+    subject_dir = os.path.join(all_subjects_dir, subject_label)
+
+    # Check existence of output
+    subject2template = os.path.join(subject_dir, 'subject2template_warp.mif')
+    lib.app.checkOutputFile(subject2template)
+    template2subject = os.path.join(subject_dir, 'template2subject_warp.mif')
+    lib.app.checkOutputFile(template2subject)
+    mask_template = os.path.join(subject_dir, 'mask_in_template_space.mif')
+    lib.app.checkOutputFile(mask_template)
+
+    # TODO If only a subset of images were used to make the template, then register all images to the template
+    runCommand('mrregister ' + os.path.join(subject_dir, 'fod.mif') + ' -mask1 ' + os.path.join(subject_dir, 'mask.mif') + ' ' +
+                               os.path.join(template_dir, 'fod_template.mif') + ' -nl_warp ' + subject2template + ' ' +
+                               template2subject + lib.app.mrtrixForce)
+
+    # Transform masks into template space. This is used in the group3 analysis level for trimming the
+    # final voxek mask to exclude voxels that do not contain data from all subjects
+    runCommand('mrtransform ' + os.path.join(subject_dir, 'mask.mif') + ' -warp ' + subject2template + ' -interp nearest '
+                              + mask_template + lib.app.mrtrixForce)
+
+
+# running group level 3 compute voxel and fixel masks, tractography, sift)
 elif lib.app.args.analysis_level == "group3":
-  # TODO if more than 20 subjects randomly select subset to generate template
-  fod = os.path.join(lib.app.args.output_dir, "fod")
-  upsampled_mask = os.path.join(lib.app.args.output_dir, "upsampled_mask")
-  fod_template = os.path.join(lib.app.args.output_dir, "fod_template.mif")
-  # TODO remove level adjustment after test
-  cmd = "population_template %s -nl_scale 0.5,0.75,1.0 -nl_lmax 2,2,2 -nl_niter 5,5,5 %s -mask_dir %s %s"%(nthreads, fod, upsampled_mask, fod_template)
-  subprocess.check_call(cmd, shell=True)
 
-# running participant level 3 (register FODs, warp FODs, compute FD, reorient fixels, fixelcorrespondence, compute FC, compute FDC)
+  voxel_mask = os.path.join(template_dir, 'voxel_mask.mif')
+  lib.app.checkOutputFile(voxel_mask)
+  fixel_mask = os.path.join(template_dir, 'fixel_mask')
+  lib.app.checkOutputFile(fixel_mask)
+  tracks = os.path.join(template_dir, 'tracks.tck')
+  lib.app.checkOutputFile(tracks)
+  tracks_sift = os.path.join(template_dir, 'tracks_sift.tck')
+  lib.app.checkOutputFile(tracks_sift)
+  fod_template = os.path.join(template_dir, 'fod_template.mif')
+
+  # Compute voxel mask and intersect with all brain masks to ensure mask voxels are present in all subjects
+  all_masks_in_template_space = glob(os.path.join(all_subjects_dir, '*', 'mask_in_template_space.mif'))
+  runCommand('mrconvert -coord 3 0 ' + fod_template + ' - | mrthreshold - - | mrmath - ' + ' '.join(all_masks_in_template_space)
+             + ' min ' + voxel_mask + lib.app.mrtrixForce)
+
+  # Compute fixel mask
+  delFolder(fixel_mask)
+  runCommand('fod2fixel -mask ' + voxel_mask + ' -fmls_peak_value 0.2 ' + fod_template + ' ' + fixel_mask + lib.app.mrtrixForce)
+
+  # Perform tractography on the FOD template
+  num_tracks = 20000000;
+  if lib.app.args.num_tracks:
+    num_tracks = int(lib.app.args.num_tracks)
+  runCommand('tckgen -angle 22.5 -maxlen 250 -minlen 10 -power 1.0 ' + fod_template + ' -seed_image '
+             + voxel_mask + ' -mask ' + voxel_mask + ' -number ' + str(num_tracks) + ' ' + tracks + lib.app.mrtrixForce)
+
+  # SIFT the streamlines
+  num_tracks_sift = 2000000;
+  if lib.app.args.num_tracks:
+    num_tracks_sift = int(lib.app.args.num_tracks_sift)
+  runCommand('tcksift ' + tracks + ' ' + fod_template + ' -term_number ' + str(num_tracks_sift) + ' ' + tracks_sift + lib.app.mrtrixForce)
+
+
+# Warp FODs, Compute FD, reorient fixels, fixelcorrespondence , compute FC, compute FDC per subject
 elif lib.app.args.analysis_level == "participant4":
-  if not os.path.exists(os.path.join(lib.app.args.output_dir, "warp")):
-    os.mkdir(os.path.join(lib.app.args.output_dir, "warp"))
-  if not os.path.exists(os.path.join(lib.app.args.output_dir, "warped_fod")):
-      os.mkdir(os.path.join(lib.app.args.output_dir, "warped_fod"))
-  fod_template = os.path.join(lib.app.args.output_dir, "fod_template.mif")
+
   for subject_label in subjects_to_analyze:
-    fod = os.path.join(lib.app.args.output_dir, "fod", "sub-" + subject_label + "_fod.mif")
-    upsampled_mask = os.path.join(lib.app.args.output_dir, "upsampled_mask", "sub-" + subject_label + "_mask.mif")
-    subject2template_warp = os.path.join(lib.app.args.output_dir, "warp", "sub-" + subject_label + "subject2template_warp.mif")
-    template2subject_warp = os.path.join(lib.app.args.output_dir, "warp", "sub-" + subject_label + "template2subject_warp.mif")
-    cmd = "mrregister %s %s -mask1 %s %s -nl_warp %s %s"%(nthreads, fod, upsampled_mask, fod_template, subject2template_warp, template2subject_warp)
-    subprocess.check_call(cmd, shell=True)
-    warped_fod = os.path.join(lib.app.args.output_dir, "warped_fod", "sub-" + subject_label + "_warped_fod.mif")
-    cmd = "mrtransform %s -noreorientation %s -warp %s %s"%(nthreads, fod, subject2template_warp, warped_fod)
-    subprocess.check_call(cmd, shell=True)
+    subject_dir = os.path.join(all_subjects_dir, subject_label)
+
+    # Fixel output all aligned in template space
+    template_fd = os.path.join(template_dir, 'fd')
+    lib.app.checkOutputFile(template_fd)
+    template_fc = os.path.join(template_dir, 'fc')
+    lib.app.checkOutputFile(template_fc)
+    template_log_fc = os.path.join(template_dir, 'log_fc', subject_label + '.mif')
+    lib.app.checkOutputFile(template_log_fc)
+    template_fdc = os.path.join(template_dir, 'fdc', subject_label + '.mif')
+    lib.app.checkOutputFile(template_fdc)
 
 
-# running group level 3 (fixelcfestats)
+    # Transform FOD images (without reorientation)
+    runCommand('mrtransform -noreorientation ' + os.path.join(subject_dir, 'fod.mif')
+                                               + ' -warp ' + os.path.join(subject_dir, 'subject2template_warp.mif') + ' '
+                                               + os.path.join(lib.app.tempDir, subject_label + 'fod_warped.mif'))
+
+
+    # Segment each FOD into fixels and compute AFD integral per fixel
+    delFolder(os.path.join(lib.app.tempDir, subject_label + 'fixel_fd'))
+    runCommand('fod2fixel -afd fd.mif ' + os.path.join(lib.app.tempDir, subject_label + 'fod_warped.mif')
+                                        + ' -mask ' + os.path.join(template_dir, 'voxel_mask.mif') + ' '
+                                        + os.path.join(lib.app.tempDir, subject_label + 'fixel_fd'))
+
+    # Reorient each fixel's direction (inplace) to account for the spatial tranformation
+    runCommand('fixelreorient -force ' + os.path.join(lib.app.tempDir, subject_label + 'fixel_fd') + ' '
+                                       + os.path.join(subject_dir, 'subject2template_warp.mif') + ' '
+                                       + os.path.join(lib.app.tempDir, subject_label + 'fixel_fd'))
+
+
+    # For each fixel in template space, find the corresponding fixel in the subject and assign its AFD value.
+    # Put all subjects AFD in the sample folder under the template directory ready for statistical analysis
+    runCommand('fixelcorrespondence ' + os.path.join(lib.app.tempDir, subject_label + 'fixel_fd', 'fd.mif') + ' '
+                                      + os.path.join(template_dir, 'fixel_mask') + ' '
+                                      + template_fd + ' ' + subject_label + '.mif' + lib.app.mrtrixForce)
+
+    # Compute FC
+    runCommand('warp2metric ' + os.path.join(subject_dir, 'subject2template_warp.mif')
+                              + ' -fc ' + os.path.join(template_dir, 'fixel_mask') + ' '
+                              + template_fc + ' ' + subject_label + '.mif' + lib.app.mrtrixForce)
+
+    # Compute log FC
+    if not os.path.exists(os.path.join(template_dir, 'log_fc')):
+      os.mkdir(os.path.join(template_dir, 'log_fc'))
+    runCommand('mrcalc ' + os.path.join(template_fc, subject_label + '.mif') + ' -log ' + template_log_fc + lib.app.mrtrixForce)
+    if not os.path.exists(os.path.join(template_dir, 'fdc')):
+      os.mkdir(os.path.join(template_dir, 'fdc'))
+    runCommand('mrcalc ' + os.path.join(template_fd, subject_label + '.mif') + ' ' + os.path.join(template_fc, subject_label + '.mif')
+                         + ' -mult ' + template_fdc + lib.app.mrtrixForce)
+
+  # Copy index and directions file into log FC and FDC fixel directories
+  runCommand('cp ' + os.path.join(template_fc, 'index.mif') + ' '
+                   + os.path.join(template_fc, 'directions.mif') + ' '
+                   + os.path.join(template_dir, 'log_fc'))
+  runCommand('cp ' + os.path.join(template_fc, 'index.mif') + ' '
+                   + os.path.join(template_fc, 'directions.mif') + ' '
+                   + os.path.join(template_dir, 'fdc'))
+
+# Perform fixel-based statistical inference in FD, FC and FDC
 elif lib.app.args.analysis_level == "group4":
-  print ("group4")
+  print('asdf')
+
+
+lib.app.complete()
