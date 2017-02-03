@@ -354,7 +354,6 @@ elif lib.app.args.analysis_level == "participant4":
 
 # Perform fixel-based statistical inference in FD, FC and FDC
 elif lib.app.args.analysis_level == "group4":
-
   print('asdf')
 
 
