@@ -10,6 +10,7 @@ import lib.app, lib.cmdlineParser
 from lib.runCommand    import runCommand
 from lib.isWindows     import isWindows
 from lib.getHeaderInfo import getHeaderInfo
+from lib.getHeaderProperty import getHeaderProperty
 from lib.delFile       import delFolder
 
 __version__ = 'BIDS-App \'FibreDensityAndCrosssection\' version {}'.format(open('/version').read()) if os.path.exists('/version') else 'BIDS-App \'FibreDensityAndCrosssection\' standalone'
@@ -33,21 +34,29 @@ lib.app.parser.add_argument('analysis_level', help='Level of the analysis that w
                                                    'level analyses can be run independently(in parallel) using the same output_dir.',
                                               choices = analysis_level_choices)
 
-
-options = lib.app.parser.add_argument_group('Options for the population_template script')
-options.add_argument('--participant_label', help='The label(s) of the participant(s) that should be analyzed. The label '
+lib.app.parser.add_argument('--participant_label', help='The label(s) of the participant(s) that should be analyzed. The label '
                                                  'corresponds to sub-<participant_label> from the BIDS spec '
                                                  '(so it does not include "sub-"). If this parameter is not '
                                                  'provided all subjects should be analyzed. Multiple '
                                                  'participants can be specified with a space separated list.',
-                                                  nargs=1)
-options.add_argument('--n_cpus', type=int, default='+', help='The number of CPU cores available on the compute node. '
+                                                  nargs='+')
+
+lib.app.parser.add_argument('--n_cpus', type=int, default='1', help='The number of CPU cores available on the compute node. '
                                                              'Set to 0 to use the maximum number of cores available')
-options.add_argument('-vox_size', type=float, default='1.25', help='define the voxel size (in mm) to be used during the upsampling step')
+
+options = lib.app.parser.add_argument_group('Options for this Fibre Density and Cross-section BIDS-App')
+
+
+options.add_argument('-vox_size', type=float, default='1.25', help='define the voxel size (in mm) to be used during the upsampling step (participant1 analysis level only)')
+
+options.add_argument('-group_subset', help='Define a subset of participants to be used when generating the group-average FOD template and response functions. The subset is to be supplied as a comma separate list. Note the subset should be representable of your entire population and not biased towards one particular group. For example in a patient-control comparison, choose equal numbers of patients and controls. Used in group1 and group2 analysis levels.', nargs=1)
+
 options.add_argument('-num_tracks', type=int, default='20000000', help='define the number of streamlines to be computed '
-                                                                        'when performing tractography on the FOD template')
+                                                                        'when performing tractography on the FOD template. '
+                                                                        '(group3 analysis level only)')
 options.add_argument('-num_tracks_sift', type=int, default='2000000', help='define the number of streamlines to '
-                                                                           'remain after performing SIFT on the tractogram')
+                                                                           'remain after performing SIFT on the tractogram'
+                                                                           '(group3 analysis level only)')
 
 
 
@@ -81,6 +90,12 @@ if not os.path.exists(template_dir):
 
 # create a temporary directory for intermediate files
 lib.app.makeTempDir()
+
+# read in group subset if supplied
+subset = []
+if lib.app.args.group_subset:
+  subset = lib.app.args.group_subset[0].split(',')
+
 
 # running participant level 1 (basic preprocessing)
 if lib.app.args.analysis_level == 'participant1':
@@ -148,17 +163,36 @@ if lib.app.args.analysis_level == 'participant1':
 # running group level 1 (average response functions) TODO check for user supplied subset to ensure response is not biased
 elif lib.app.args.analysis_level == "group1":
   printMessage('averaging response functions')
+
+  # Check output files exist
   wm_response_file = os.path.join(lib.app.args.output_dir, 'average_wm_response.txt')
   lib.app.checkOutputFile(wm_response_file)
   gm_response_file = os.path.join(lib.app.args.output_dir, 'average_gm_response.txt')
   lib.app.checkOutputFile(gm_response_file)
   csf_response_file = os.path.join(lib.app.args.output_dir, 'average_csf_response.txt')
   lib.app.checkOutputFile(csf_response_file)
-  input_wm_files = glob(os.path.join(all_subjects_dir, '*', 'wm_response.txt'))
+
+  # process subset
+  input_wm_files = []
+  input_gm_files = []
+  input_csf_files = []
+  if (len(subset) > 0):
+    printMessage('Using a group subset to compute average response functions' + str(subset))
+    subject_labels = [os.path.basename(x) for x in glob(os.path.join(all_subjects_dir, '*'))]
+    for subj in subset:
+      if subj not in subject_labels:
+        errorMessage('subject label (' + os.path.basename(subj) + ') supplied as part of -group_subset option does exist in subjects directory')
+      input_wm_files.append(os.path.join(all_subjects_dir, subj, 'wm_response.txt'))
+      input_gm_files.append(os.path.join(all_subjects_dir, subj, 'gm_response.txt'))
+      input_csf_files.append(os.path.join(all_subjects_dir, subj, 'csf_response.txt'))
+  # use all subjects
+  else:
+    input_wm_files = glob(os.path.join(all_subjects_dir, '*', 'wm_response.txt'))
+    input_gm_files = glob(os.path.join(all_subjects_dir, '*', 'gm_response.txt'))
+    input_csf_files = glob(os.path.join(all_subjects_dir, '*', 'csf_response.txt'))
+
   runCommand('average_response ' + ' '.join(input_wm_files) + ' ' + wm_response_file + lib.app.mrtrixForce)
-  input_gm_files = glob(os.path.join(all_subjects_dir, '*', 'gm_response.txt'))
   runCommand('average_response ' + ' '.join(input_gm_files) + ' ' + gm_response_file + lib.app.mrtrixForce)
-  input_csf_files = glob(os.path.join(all_subjects_dir, '*', 'csf_response.txt'))
   runCommand('average_response ' + ' '.join(input_csf_files) + ' ' + csf_response_file + lib.app.mrtrixForce)
 
 
@@ -219,13 +253,43 @@ elif lib.app.args.analysis_level == 'group2':
   os.mkdir('fod_input')
   os.mkdir('mask_input')
 
+  # Check if all members of subset exist
+  if (len(subset) > 0):
+    printMessage('Using a group subset to compute population template' + str(subset))
+    subject_labels = [os.path.basename(x) for x in glob(os.path.join(all_subjects_dir, '*'))]
+    for subj in subset:
+      if subj not in subject_labels:
+        errorMessage('subject label (' + os.path.basename(subj) + ') supplied as part of -group_subset option does exist in subjects directory')
+      lib.app.checkOutputFile(os.path.join(all_subjects_dir, subj, 'subject2template_warp.mif'))
+      lib.app.checkOutputFile(os.path.join(all_subjects_dir, subj, 'template2subject_warp.mif'))
+
+
   # make symlinks to all population_template inputs in single directory
   for subj in glob(os.path.join(all_subjects_dir, '*')):
-    os.symlink(os.path.join(subj, 'fod.mif'), os.path.join('fod_input', os.path.basename(subj) + '.mif'))
-    os.symlink(os.path.join(subj, 'mask.mif'), os.path.join('mask_input', os.path.basename(subj) + '.mif'))
+    if (len(subset) > 0):
+      if os.path.basename(subj) in subset:
+        os.symlink(os.path.join(subj, 'fod.mif'), os.path.join('fod_input', os.path.basename(subj) + '.mif'))
+        os.symlink(os.path.join(subj, 'mask.mif'), os.path.join('mask_input', os.path.basename(subj) + '.mif'))
+    else:
+      os.symlink(os.path.join(subj, 'fod.mif'), os.path.join('fod_input', os.path.basename(subj) + '.mif'))
+      os.symlink(os.path.join(subj, 'mask.mif'), os.path.join('mask_input', os.path.basename(subj) + '.mif'))
 
   # Compute FOD template
-  runCommand('population_template fod_input -mask mask_input ' + fod_template + lib.app.mrtrixForce)
+  if (len(subset) > 0):
+    runCommand('population_template fod_input -mask mask_input ' + os.path.join(lib.app.tempDir, 'tmp.mif'))
+    # Set a field in the header of the template to mark it as being generated as a subset or not. This is used in the next step
+    runCommand('mrconvert ' + os.path.join(lib.app.tempDir, 'tmp.mif') + ' -header_set made_from_subset true ' + fod_template + lib.app.mrtrixForce)
+  else:
+    runCommand('population_template fod_input -mask mask_input ' + os.path.join(lib.app.tempDir, 'tmp.mif') + ' -warp_dir ' +  os.path.join(lib.app.tempDir, 'warps'))
+    runCommand('mrconvert ' + os.path.join(lib.app.tempDir, 'tmp.mif') + ' -header_set made_from_subset false ' + fod_template + lib.app.mrtrixForce)
+    # Save all warps since we don't need to generate them in the next step if all subjects were used to make the template
+    for subj in [os.path.basename(x) for x in glob(os.path.join(all_subjects_dir, '*'))]:
+      runCommand('warpconvert -type warpfull2deformation -template ' + fod_template + ' '
+                              + os.path.join(lib.app.tempDir, 'warps', subj + '.mif') + ' '
+                              + os.path.join(all_subjects_dir, subj, 'subject2template_warp.mif') + lib.app.mrtrixForce)
+      runCommand('warpconvert -type warpfull2deformation -from 2 -template ' + os.path.join(all_subjects_dir, subj, 'fod.mif') + ' '
+                              + os.path.join(lib.app.tempDir, 'warps', subj + '.mif') + ' '
+                              + os.path.join(all_subjects_dir, subj, 'template2subject_warp.mif') + lib.app.mrtrixForce)
 
 
 # running participant level 3 (register FODs, and warp masks)
@@ -235,17 +299,20 @@ elif lib.app.args.analysis_level == "participant3":
     subject_dir = os.path.join(all_subjects_dir, subject_label)
 
     # Check existence of output
-    subject2template = os.path.join(subject_dir, 'subject2template_warp.mif')
-    lib.app.checkOutputFile(subject2template)
-    template2subject = os.path.join(subject_dir, 'template2subject_warp.mif')
-    lib.app.checkOutputFile(template2subject)
     mask_template = os.path.join(subject_dir, 'mask_in_template_space.mif')
     lib.app.checkOutputFile(mask_template)
 
-    # TODO If only a subset of images were used to make the template, then register all images to the template
-    runCommand('mrregister ' + os.path.join(subject_dir, 'fod.mif') + ' -mask1 ' + os.path.join(subject_dir, 'mask.mif') + ' ' +
-                               os.path.join(template_dir, 'fod_template.mif') + ' -nl_warp ' + subject2template + ' ' +
-                               template2subject + lib.app.mrtrixForce)
+    # if the template was generated with a subset of the whole study, then we still need to register all subjects to that template
+    if getHeaderProperty (os.path.join(template_dir, 'fod_template.mif'), 'made_from_subset') == 'true':
+      subject2template = os.path.join(subject_dir, 'subject2template_warp.mif')
+      lib.app.checkOutputFile(subject2template)
+      template2subject = os.path.join(subject_dir, 'template2subject_warp.mif')
+      lib.app.checkOutputFile(template2subject)
+      # TODO If only a subset of images were used to make the template, then register all images to the template
+      runCommand('mrregister ' + os.path.join(subject_dir, 'fod.mif') + ' -mask1 ' + os.path.join(subject_dir, 'mask.mif')
+                               + ' ' +  os.path.join(template_dir, 'fod_template.mif') + ' -nl_warp '
+                               + subject2template + ' ' + template2subject + lib.app.mrtrixForce)
+
 
     # Transform masks into template space. This is used in the group3 analysis level for trimming the
     # final voxek mask to exclude voxels that do not contain data from all subjects
@@ -266,6 +333,16 @@ elif lib.app.args.analysis_level == "group3":
   lib.app.checkOutputFile(tracks_sift)
   fod_template = os.path.join(template_dir, 'fod_template.mif')
 
+  # Check tractography and SIFT input
+  num_tracks_sift = 2000000;
+  if lib.app.args.num_tracks:
+    num_tracks_sift = int(lib.app.args.num_tracks_sift)
+  num_tracks = 20000000;
+  if lib.app.args.num_tracks:
+    num_tracks = int(lib.app.args.num_tracks)
+  if num_tracks_sift >= num_tracks:
+    errorMessage('the tracks remaining after SIFT must be less than the number of tracks generated during tractography')
+
   # Compute voxel mask and intersect with all brain masks to ensure mask voxels are present in all subjects
   all_masks_in_template_space = glob(os.path.join(all_subjects_dir, '*', 'mask_in_template_space.mif'))
   runCommand('mrconvert -coord 3 0 ' + fod_template + ' - | mrthreshold - - | mrmath - ' + ' '.join(all_masks_in_template_space)
@@ -276,16 +353,10 @@ elif lib.app.args.analysis_level == "group3":
   runCommand('fod2fixel -mask ' + voxel_mask + ' -fmls_peak_value 0.2 ' + fod_template + ' ' + fixel_mask + lib.app.mrtrixForce)
 
   # Perform tractography on the FOD template
-  num_tracks = 20000000;
-  if lib.app.args.num_tracks:
-    num_tracks = int(lib.app.args.num_tracks)
   runCommand('tckgen -angle 22.5 -maxlen 250 -minlen 10 -power 1.0 ' + fod_template + ' -seed_image '
              + voxel_mask + ' -mask ' + voxel_mask + ' -number ' + str(num_tracks) + ' ' + tracks + lib.app.mrtrixForce)
 
   # SIFT the streamlines
-  num_tracks_sift = 2000000;
-  if lib.app.args.num_tracks:
-    num_tracks_sift = int(lib.app.args.num_tracks_sift)
   runCommand('tcksift ' + tracks + ' ' + fod_template + ' -term_number ' + str(num_tracks_sift) + ' ' + tracks_sift + lib.app.mrtrixForce)
 
 
