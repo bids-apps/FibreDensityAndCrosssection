@@ -60,9 +60,9 @@ DESCRIPTION
      Density & Cross-section). The analysis pipeline relies primarily on the
      MRtrix3 software package (www.mrtrix.org).
 
-Options for the population_template script
+optional arguments
 
-  --participant_label PARTICIPANT_LABEL
+  --participant_label <space-separated list>
      The label(s) of the participant(s) that should be analyzed. The label
      corresponds to sub-<participant_label> from the BIDS spec (so it does not
      include "sub-"). If this parameter is not provided all subjects should be
@@ -72,6 +72,28 @@ Options for the population_template script
   --n_cpus INT
      The number of CPU cores available on the compute node. Set to 0 to use the
      maximum number of cores available
+
+Options for this Fibre Density and Cross-section BIDS-App
+
+  -vox_size FLOAT
+     define the voxel size (in mm) to be used during the upsampling step
+     (participant1 analysis level only)
+
+  -group_subset GROUP_SUBSET
+     Define a subset of participants to be used when generating the group-
+     average FOD template and response functions. The subset is to be supplied
+     as a comma separate list. Note the subset should be representable of your
+     entire population and not biased towards one particular group. For example
+     in a patient-control comparison, choose equal numbers of patients and
+     controls. Used in group1 and group2 analysis levels.
+
+  -num_tracks INT
+     define the number of streamlines to be computed when performing
+     tractography on the FOD template. (group3 analysis level only)
+
+  -num_tracks_sift INT
+     define the number of streamlines to remain after performing SIFT on the
+     tractogram(group3 analysis level only)
 
 Standard options
 
@@ -85,18 +107,15 @@ Standard options
   -help
      Display help information for the script
 
-  -nocleanup
-     Do not delete temporary files during script, or temporary directory at
-     script completion
-
-  -tempdir /path/to/tmp/
-     Manually specify the path in which to generate the temporary directory
-
   -quiet
      Suppress all console output during script execution
 
   -verbose
-     Display additional information for every command invoked
+     Display additional information and progress for every command invoked
+
+  -debug
+     Display additional debugging information over and above the verbose output
+
 
 AUTHOR
      David Raffelt (david.raffelt@florey.edu.au)
