@@ -64,7 +64,7 @@ jobs:
           docker run -ti --rm --read-only \
             -v /tmp:/tmp \
             -v /var/tmp:/var/tmp \
-            -v ${HOME}/data/ds114_test1:/bids_dataset \
+            /tmp/workspace/data/ds114_test1:/bids_dataset \
             bids/${CIRCLE_PROJECT_REPONAME,,} --version
 
     - run:
@@ -73,7 +73,7 @@ jobs:
           docker run -ti --rm --read-only \
             -v /tmp:/tmp \
             -v /var/tmp:/var/tmp \
-            -v ${HOME}/data/mrtrix3_connectome_data:/bids_dataset \
+            /tmp/workspace/data/mrtrix3_connectome_data:/bids_dataset \
             -v ${HOME}/outputs1:/outputs
               bids/${CIRCLE_PROJECT_REPONAME,,} /bids_dataset /outputs participant1 \
               --participant_label 01 --n_cpus 2
@@ -84,7 +84,7 @@ jobs:
           docker run -ti --rm --read-only \
             -v /tmp:/tmp \
             -v /var/tmp:/var/tmp \
-            -v ${HOME}/data/mrtrix3_connectome_data:/bids_dataset \
+            /tmp/workspace/data/mrtrix3_connectome_data:/bids_dataset \
             -v ${HOME}/outputs1:/outputs
               bids/${CIRCLE_PROJECT_REPONAME,,} /bids_dataset /outputs participant1 \
               --participant_label 02 --n_cpus 2
