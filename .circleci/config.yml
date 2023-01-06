@@ -21,19 +21,10 @@ jobs:
             && mkdir -p ${HOME}/data && tar xf ${HOME}/downloads/mrtrix3_connectome_data.tar -C ${HOME}/data;
           fi
     - run:
+        name: Build Docker image
         command: |
-          if [[ -e ~/docker/image.tar ]]; \
-            then docker load -i ~/docker/image.tar;
-          fi
-    - run: git describe --tags --always > version
-    - run:
-        name: Build image
-        command: docker build -t bids/${CIRCLE_PROJECT_REPONAME,,} .
-        no_output_timeout: 6h
-    - run:
-        name: Save image
-        command: |
-          mkdir -p ~/docker; docker save "bids/${CIRCLE_PROJECT_REPONAME,,}" > ~/docker/image.tar
+          wget https://raw.githubusercontent.com/bids-apps/maintenance-tools/main/circleci/build_docker.sh
+          bash build_docker.sh  
 
     - save_cache:
         key: my_cache
@@ -65,7 +56,7 @@ jobs:
             -v /tmp:/tmp \
             -v /var/tmp:/var/tmp \
             /tmp/workspace/data/ds114_test1:/bids_dataset \
-            bids/${CIRCLE_PROJECT_REPONAME,,} --version
+              bids/${CIRCLE_PROJECT_REPONAME,,} --version
 
     - run:
         name: Print version
@@ -75,8 +66,11 @@ jobs:
             -v /var/tmp:/var/tmp \
             /tmp/workspace/data/mrtrix3_connectome_data:/bids_dataset \
             -v ${HOME}/outputs1:/outputs
-              bids/${CIRCLE_PROJECT_REPONAME,,} /bids_dataset /outputs participant1 \
-              --participant_label 01 --n_cpus 2
+              bids/${CIRCLE_PROJECT_REPONAME,,} \
+                /bids_dataset \
+                /outputs \
+                participant1 \
+                --participant_label 01 --n_cpus 2
         no_output_timeout: 6h
     - run:
         name: Print version
@@ -86,36 +80,28 @@ jobs:
             -v /var/tmp:/var/tmp \
             /tmp/workspace/data/mrtrix3_connectome_data:/bids_dataset \
             -v ${HOME}/outputs1:/outputs
-              bids/${CIRCLE_PROJECT_REPONAME,,} /bids_dataset /outputs participant1 \
-              --participant_label 02 --n_cpus 2
+              bids/${CIRCLE_PROJECT_REPONAME,,} \
+                /bids_dataset \
+                /outputs \
+                participant1 \
+                --participant_label 02 --n_cpus 2
         no_output_timeout: 6h
 
     - store_artifacts:
         path: ~/output
 
-  deployment:
-    docker:
-    - image: ubuntu-2204:2022.10.2
-
+  deploy:
+    machine:
+      image: ubuntu-2204:2022.10.2
     steps:
     - attach_workspace:
         at: /tmp/workspace
-
-    - run: docker load -i /tmp/workspace/image.tar
+    - run: docker load -i /tmp/workspace/docker/image.tar
     - run:
+        name: push to dockerhub
         command: |
-          if [[ -n "$DOCKER_PASS" ]]; then
-            docker login -u $DOCKER_USER -p $DOCKER_PASS && \ docker push bids/${CIRCLE_PROJECT_REPONAME,,}:latest;
-          fi
-        no_output_timeout: 6h
-    - run:
-        command: |
-          if [[ -n "$DOCKER_PASS" ]]; then
-            docker login -u $DOCKER_USER -p $DOCKER_PASS && \
-            docker tag bids/${CIRCLE_PROJECT_REPONAME,,} bids/${CIRCLE_PROJECT_REPONAME,,}:$CIRCLE_TAG
-            docker push bids/${CIRCLE_PROJECT_REPONAME,,}:$CIRCLE_TAG;
-          fi
-        no_output_timeout: 6h
+          wget https://raw.githubusercontent.com/bids-apps/maintenance-tools/main/circleci/push_docker.sh
+          bash push_docker.sh  
 
 workflows:
   version: 2
@@ -139,3 +125,5 @@ workflows:
             ignore: /.*/
           tags:
             only: /.*/
+
+# VS Code Extension Version: 1.5.1
