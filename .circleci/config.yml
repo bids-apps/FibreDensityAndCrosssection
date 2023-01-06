@@ -95,7 +95,7 @@ jobs:
 
   deployment:
     docker:
-    - image: circleci/buildpack-deps:stretch
+    - image: ubuntu-2204:2022.10.2
 
     steps:
     - attach_workspace:
