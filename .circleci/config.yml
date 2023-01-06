@@ -42,7 +42,7 @@ jobs:
         - ~/data
 
     - persist_to_workspace:
-        root: ~/docker
+        root: /home/circleci
         paths:
         - docker/image.tar
 
